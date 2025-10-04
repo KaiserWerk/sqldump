@@ -32,7 +32,7 @@ func NewUploader(username, password, host string) *Uploader {
 }
 
 // ScheduleUpload schedules periodic uploads of the specified file to the storage box at the given interval.
-func (u *Uploader) ScheduleUpload(ctx context.Context, filename string, targetDirectory string, interval time.Duration, maxFiles uint8) {
+func (u *Uploader) ScheduleUpload(ctx context.Context, filenameFunc func() (string, error), targetDirectory string, interval time.Duration, maxFiles uint8) {
 	u.maxFiles = maxFiles
 	u.counter = 0
 	ticker := time.NewTicker(interval)
@@ -44,6 +44,11 @@ func (u *Uploader) ScheduleUpload(ctx context.Context, filename string, targetDi
 				ticker = nil
 				return
 			case <-ticker.C:
+				filename, err := filenameFunc()
+				if err != nil {
+					log.Printf("Error getting filename: %v", err)
+					continue
+				}
 				if err := u.UploadFileToStorageBox(filename, u.getNextFilename(filename), targetDirectory); err != nil {
 					log.Printf("Error uploading file: %v", err)
 				}
