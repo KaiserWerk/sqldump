@@ -1,4 +1,4 @@
-module sqldump
+module github.com/KaiserWerk/sqldump
 
 go 1.25.1
 
