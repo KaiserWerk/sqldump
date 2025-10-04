@@ -32,7 +32,7 @@ func NewUploader(username, password, host string) *Uploader {
 }
 
 // ScheduleUpload schedules periodic uploads of the specified file to the storage box at the given interval.
-func (u *Uploader) ScheduleUpload(ctx context.Context, filename string, interval time.Duration, maxFiles uint8) {
+func (u *Uploader) ScheduleUpload(ctx context.Context, filename string, targetDirectory string, interval time.Duration, maxFiles uint8) {
 	u.maxFiles = maxFiles
 	u.counter = 0
 	ticker := time.NewTicker(interval)
@@ -44,7 +44,7 @@ func (u *Uploader) ScheduleUpload(ctx context.Context, filename string, interval
 				ticker = nil
 				return
 			case <-ticker.C:
-				if err := u.UploadFileToStorageBox(filename, u.getNextFilename(filename)); err != nil {
+				if err := u.UploadFileToStorageBox(filename, u.getNextFilename(filename), targetDirectory); err != nil {
 					log.Printf("Error uploading file: %v", err)
 				}
 			}
@@ -71,7 +71,7 @@ func (u *Uploader) incrementCounter() uint8 {
 	return u.counter
 }
 
-func (u *Uploader) UploadFileToStorageBox(filename, newFilename string) error {
+func (u *Uploader) UploadFileToStorageBox(filename, targetFilename string, targetDirectory string) error {
 	// SSH Config
 	config := &ssh.ClientConfig{
 		User: u.Username,
@@ -102,7 +102,7 @@ func (u *Uploader) UploadFileToStorageBox(filename, newFilename string) error {
 	defer srcFile.Close()
 
 	// target on storage box
-	dstFile, err := client.Create("/" + newFilename)
+	dstFile, err := client.Create(targetDirectory + "/" + targetFilename)
 	if err != nil {
 		return fmt.Errorf("create error: %w", err)
 	}
