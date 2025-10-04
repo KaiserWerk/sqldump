@@ -53,7 +53,11 @@ func (u *Uploader) ScheduleUpload(ctx context.Context, filenameFunc func() (stri
 					log.Printf("Error uploading file: %v", err)
 				}
 
-				_ = os.Remove(filename)
+				if deleteFileAfterUpload {
+					if err := os.Remove(filename); err != nil {
+						log.Printf("Error deleting file: %v", err)
+					}
+				}
 			}
 		}
 	}()
